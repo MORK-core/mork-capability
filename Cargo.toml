@@ -1,0 +1,10 @@
+[package]
+name = "mork-capability"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bitfield = { version = "0.14", default-features = false }
+bitvec = { version = "1.0", default-features = false, features = ["alloc"] }
+log = "0.4"
+mork-common = { path = "../../mork-common" }
