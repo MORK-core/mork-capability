@@ -94,6 +94,9 @@ bitfield! {
     impl Debug;
     pub type_tag, set_type : 7, 0;
     pub base_ptr, set_base_ptr: 64, 13;
+    pub mapped_addr, set_mapped_addr: 116, 65;
+    pub mapped_level, set_level: 126, 119;
+    pub is_mapped, set_mapped: 127, 127;
 }
 
 impl PageTableCap {
@@ -117,6 +120,8 @@ bitfield! {
     impl Debug;
     pub type_tag, set_type : 7, 0;
     pub base_ptr, set_base_ptr: 64, 13;
+    pub mapped_addr, set_mapped_addr: 116, 65;
+    pub is_mapped, set_mapped: 127, 127;
 }
 
 impl FrameCap {
