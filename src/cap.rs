@@ -2,7 +2,8 @@ use bitfield::bitfield;
 
 #[derive(Debug, PartialOrd, PartialEq)]
 pub enum CapType {
-    CNode = 0,
+    UnInit = 0,
+    CNode,
     Thread,
     PageTable,
     Frame
@@ -31,6 +32,21 @@ impl Cap {
             CapType::from_word(self.cnode_cap.type_tag())
         }
     }
+
+    pub fn derive(&self) -> Self {
+        unsafe {
+            let new_cap_raw = self.raw | (1 << 7);
+            Self {
+                raw: new_cap_raw,
+            }
+        }
+    }
+
+    pub fn is_derived(&self) -> bool {
+        unsafe {
+            (self.raw & (1 << 7)) != 0
+        }
+    }
 }
 
 impl Default for Cap {
@@ -45,8 +61,37 @@ bitfield! {
     #[derive(Copy, Clone)]
     pub struct CNodeCap(u128);
     impl Debug;
-    pub type_tag, set_type : 7, 0;
+    pub type_tag, set_type : 6, 0;
     pub base_ptr, set_base_ptr: 64, 13;
+}
+
+bitfield! {
+    #[derive(Copy, Clone)]
+    pub struct ThreadCap(u128);
+    impl Debug;
+    pub type_tag, set_type : 6, 0;
+    pub base_ptr, set_base_ptr: 64, 13;
+}
+
+bitfield! {
+    #[derive(Copy, Clone)]
+    pub struct PageTableCap(u128);
+    impl Debug;
+    pub type_tag, set_type : 6, 0;
+    pub base_ptr, set_base_ptr: 64, 13;
+    pub mapped_addr, set_mapped_addr: 116, 65;
+    pub mapped_level, set_level: 126, 119;
+    pub is_mapped, set_mapped: 127, 127;
+}
+
+bitfield! {
+    #[derive(Copy, Clone)]
+    pub struct FrameCap(u128);
+    impl Debug;
+    pub type_tag, set_type : 6, 0;
+    pub base_ptr, set_base_ptr: 64, 13;
+    pub mapped_addr, set_mapped_addr: 116, 65;
+    pub is_mapped, set_mapped: 127, 127;
 }
 
 impl CNodeCap {
@@ -64,15 +109,6 @@ impl CNodeCap {
     }
 }
 
-
-bitfield! {
-    #[derive(Copy, Clone)]
-    pub struct ThreadCap(u128);
-    impl Debug;
-    pub type_tag, set_type : 7, 0;
-    pub base_ptr, set_base_ptr: 64, 13;
-}
-
 impl ThreadCap {
     pub fn new(base_ptr: usize) -> Self {
         let mut cap = ThreadCap(0);
@@ -88,17 +124,6 @@ impl ThreadCap {
     }
 }
 
-bitfield! {
-    #[derive(Copy, Clone)]
-    pub struct PageTableCap(u128);
-    impl Debug;
-    pub type_tag, set_type : 7, 0;
-    pub base_ptr, set_base_ptr: 64, 13;
-    pub mapped_addr, set_mapped_addr: 116, 65;
-    pub mapped_level, set_level: 126, 119;
-    pub is_mapped, set_mapped: 127, 127;
-}
-
 impl PageTableCap {
     pub fn new(base_ptr: usize) -> Self {
         let mut cap = PageTableCap(0);
@@ -112,16 +137,6 @@ impl PageTableCap {
             page_table_cap: self,
         }
     }
-}
-
-bitfield! {
-    #[derive(Copy, Clone)]
-    pub struct FrameCap(u128);
-    impl Debug;
-    pub type_tag, set_type : 7, 0;
-    pub base_ptr, set_base_ptr: 64, 13;
-    pub mapped_addr, set_mapped_addr: 116, 65;
-    pub is_mapped, set_mapped: 127, 127;
 }
 
 impl FrameCap {

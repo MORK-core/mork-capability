@@ -6,6 +6,8 @@ use mork_common::constants::MAX_CNODE_SIZE;
 use mork_common::types::Array;
 use crate::cap::{CNodeCap, Cap};
 
+pub type CapIndex = usize;
+
 #[repr(C, align(4096))]
 pub struct CapNode {
     slots: Array<Cap, { MAX_CNODE_SIZE }>,
