@@ -1,4 +1,5 @@
 use bitfield::bitfield;
+use crate::free_callback::CALLBACK_MANAGER;
 
 #[derive(Debug, PartialOrd, PartialEq)]
 pub enum CapType {
@@ -47,6 +48,31 @@ impl Cap {
             (self.raw & (1 << 7)) != 0
         }
     }
+
+    pub fn free(&self) {
+        if self.is_derived() {
+            return;
+        }
+        if let Some(handler) = CALLBACK_MANAGER.handler.as_ref() {
+            match self.get_type() {
+                CapType::UnInit => {}
+                CapType::CNode => {
+                    handler.free_cnode(unsafe {self.cnode_cap});
+                }
+                CapType::Thread => {
+                    handler.free_task(unsafe {self.thread_cap});
+                }
+                CapType::PageTable => {
+                    handler.free_page_table(unsafe {self.page_table_cap});
+                }
+                CapType::Frame => {
+                    handler.free_frame(unsafe {self.frame_cap} );
+                }
+            }
+        } else {
+            panic!("free-handler is null!");
+        }
+    }
 }
 
 impl Default for Cap {
@@ -58,6 +84,7 @@ impl Default for Cap {
 }
 
 bitfield! {
+    #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct CNodeCap(u128);
     impl Debug;
@@ -66,6 +93,7 @@ bitfield! {
 }
 
 bitfield! {
+    #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct ThreadCap(u128);
     impl Debug;
@@ -74,6 +102,7 @@ bitfield! {
 }
 
 bitfield! {
+    #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct PageTableCap(u128);
     impl Debug;
@@ -85,12 +114,14 @@ bitfield! {
 }
 
 bitfield! {
+    #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct FrameCap(u128);
     impl Debug;
     pub type_tag, set_type : 6, 0;
     pub base_ptr, set_base_ptr: 64, 13;
     pub mapped_addr, set_mapped_addr: 116, 65;
+    pub level, set_level: 126, 119;
     pub is_mapped, set_mapped: 127, 127;
 }
 
@@ -140,9 +171,10 @@ impl PageTableCap {
 }
 
 impl FrameCap {
-    pub fn new(base_ptr: usize) -> Self {
+    pub fn new(base_ptr: usize, level: usize) -> Self {
         let mut cap = FrameCap(0);
         cap.set_type(CapType::Frame as usize as u128);
+        cap.set_level(level as u128);
         cap.set_base_ptr(base_ptr as u128 >> 12);
         cap
     }

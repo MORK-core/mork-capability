@@ -42,6 +42,19 @@ impl CapNode {
         }
         None
     }
+
+    pub fn free_slot(&mut self, index: CapIndex) {
+        self[index].free();
+        self.usage.set(index, false);
+    }
+
+    pub fn is_used(&self, index: usize) -> bool {
+        self.usage[index]
+    }
+
+    pub fn empty(&self) -> bool {
+        self.usage.is_empty()
+    }
 }
 
 impl Index<usize> for CapNode {
